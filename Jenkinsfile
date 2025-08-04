@@ -1,24 +1,32 @@
 pipeline {
     agent any
+
     stages {
         stage('Clone') {
             steps {
-                git 'https://github.com/AmanGalav11/hello-world.git'
+                git 'git@github.com:AmanGalav11/hello-world.git'
             }
         }
-        stage('Build') {
+
+        stage('Build Docker Image') {
             steps {
-                sh './mvnw package'
+                script {
+                    dockerImage = docker.build("aman-hello-world")
+                }
             }
         }
-        stage('Docker Build') {
+
+        stage('Push to Docker Registry') {
             steps {
-                sh 'docker build -t hello-world .'
+                withDockerRegistry([credentialsId: 'docker-hub-creds', url: '']) {
+                    dockerImage.push("latest")
+                }
             }
         }
-        stage('K8s Deploy') {
+
+        stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f k8s-deployment.yaml'
+                sh 'kubectl apply -f k8s/deployment.yaml'
             }
         }
     }
